@@ -22,6 +22,17 @@ class LocalEnsembleModel:
         for epoch in range(epochs):
             self.ensemble_model.partial_fit(predictions, labels, classes=np.unique(labels))
 
+    def update_ensemble_model_stage_2(self, global_models, local_data, local_labels):
+        # 使用全局模态模型和本地数据更新个性化集成模型
+        predictions = [global_models[m].predict(local_data) for m in range(self.num_modalities)]
+        ensemble_predictions = self.fuse_predictions(predictions)
+        self.update_ensemble_model(ensemble_predictions, local_labels)
+
+    def fuse_predictions(self, predictions):
+        # 决策级融合逻辑，可以根据需要调整
+        fused_predictions = np.mean(predictions, axis=0)  # Placeholder
+        return fused_predictions
+
     def save_model(self):
         # 保存本地集成模型
         pass
