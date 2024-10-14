@@ -1,8 +1,8 @@
 import numpy as np
-from mmfedmc.local_model import LocalEnsembleModel
-from mmfedmc.global_model import GlobalModel
-from mmfedmc.communication import Communication
-from mmfedmc.fusion import DecisionFusion
+from local_model.local_model import LocalEnsembleModel
+from global_model.global_model import GlobalModel
+from communication.communication import Communication
+from fusion.fusion import DecisionFusion
 
 # 初始化参数
 T = 10  # 通信轮次
@@ -45,7 +45,17 @@ for t in range(T):
     selected_clients = communication.select_clients(local_losses, delta)
     global_weights = np.random.rand(num_modalities)
 
-    local_model_predictions = [[local_models[client].predict(data[client], modality) for modality in range(num_modalities)] for client in selected_clients]
+    #    确保每个客户端和模态的数据样本数量一致
+    local_model_predictions = []
+    for client in selected_clients:
+        client_predictions = []
+        for modality in range(num_modalities):
+            prediction = local_models[client].predict(data[client], modality)
+            if len(prediction) != len(data[client]):
+                raise ValueError(f"Inconsistent number of samples for client {client} and modality {modality}")
+            client_predictions.append(prediction)
+        local_model_predictions.append(client_predictions)
+
     global_model.aggregate_models(local_model_predictions, global_weights)
 
     # 本地部署
