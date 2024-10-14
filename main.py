@@ -63,6 +63,24 @@ for t in range(T):
         for modality_index in range(num_modalities):
             local_model.update_ensemble_model(global_models, labels[client_index])
 
+    for client_index, local_model in enumerate(local_models):
+        model_sizes = local_model.get_model_sizes()
+    print(f"Client {client_index} model sizes: {model_sizes}")
+    
+    # Example usage in main.py
+    for t in range(T):
+        print(f"Communication round {t+1}")
+        for client_index, local_model in enumerate(local_models):
+            for modality_index in range(num_modalities):
+                local_model.train(data[client_index], labels[client_index], modality_index, epochs=E, learning_rate=learning_rate)
+            predictions = [local_model.predict(data[client_index], i) for i in range(num_modalities)]
+            local_model.update_ensemble_model(predictions, labels[client_index], epochs=E, learning_rate=learning_rate)
+
+        for modality_index in range(num_modalities):
+            recency = communication.compute_recency(current_round=t, modality_index=modality_index)
+            print(f"Modality {modality_index} recency: {recency}")
+            communication.update_last_upload_round(modality_index=modality_index, current_round=t)
+
 # 更新模态模型和集成模型
 final_global_models = global_model.get_global_models()
 final_local_models = [local_model.save_model() for local_model in local_models]

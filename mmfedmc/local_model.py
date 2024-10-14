@@ -36,6 +36,11 @@ class LocalEnsembleModel:
     def save_model(self):
         # 保存本地集成模型
         pass
+    
+    def get_model_sizes(self):
+        # 获取每个模态模型的参数大小
+        model_sizes = [self.models[m].coef_.size for m in range(self.num_modalities)]
+        return model_sizes
 
 # Example usage:
 # local_model = LocalEnsembleModel(num_modalities=3)
