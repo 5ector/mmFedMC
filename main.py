@@ -1,9 +1,8 @@
 import numpy as np
-from local_model.local_model import LocalEnsembleModel
-from global_model.global_model import GlobalModel
-from communication.communication import Communication
-from fusion.fusion import DecisionFusion
-
+from mmfedmc.local_model import LocalEnsembleModel
+from mmfedmc.global_model import GlobalModel
+from mmfedmc.communication import Communication
+from mmfedmc.fusion import DecisionFusion
 # 初始化参数
 T = 10  # 通信轮次
 num_clients = 5
