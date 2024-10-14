@@ -1,6 +1,4 @@
-# mmFedMC
 
-We propose multimodal Federated learning with joint Modality and Client selection (mmFedMC), an mmFL methodology tailored for clients with heterogeneously absent modalities. 
 
 ## Overview
 
@@ -12,6 +10,15 @@ An overview of our proposed method and comparison with traditional mmFL are give
 - **Classical ML Models**: Employs models like Random Forest for the ensemble, reducing computational overhead and improving interpretability.
 - **Selective Modality Communication**: Takes into account factors such as modality performance, communication overhead, and recency.
 - **Selective Client Uploading**: Optimizes efficiency and effectiveness by ranking clients based on local loss of modality models.
+
+## Repository Structure
+main.py: The main script to run the federated learning process.
+mmfedmc/:
+local_model.py: Contains the LocalEnsembleModel class for local model training and prediction.
+global_model.py: Contains the GlobalModel class for global model aggregation.
+communication.py: Handles communication logic, including Shapley value computation and client/modality selection.
+fusion.py: Contains the DecisionFusion class for decision-level fusion.
+selection.py: Implements client and modality selection strategies.
 
 ## How to Use
 
