@@ -2,8 +2,11 @@ import numpy as np
 from itertools import combinations
 
 class Communication:
-    def __init__(self, num_modalities):
+    def __init__(self, num_modalities, alpha_s=0.5, alpha_c=0.5):
         self.num_modalities = num_modalities
+        self.alpha_s = alpha_s
+        self.alpha_c = alpha_c
+        self.last_upload_rounds = np.zeros((num_modalities,), dtype=int)  # 初始化每个模态的上次上传轮次
 
     def compute_shapley_values(self, predictions, true_labels):
         # 计算每个模态的Shapley值
@@ -32,8 +35,8 @@ class Communication:
         normalized_model_size = (model_size - np.min(model_size)) / (np.max(model_size) - np.min(model_size))
         normalized_recency = recency / np.max(recency)
         
-        # 计算优先级
-        priority = 0.5 * normalized_shapley_values + 0.3 * (1 - normalized_model_size) + 0.2 * normalized_recency
+         # 计算优先级
+        priority = self.alpha_s * normalized_shapley_values + self.alpha_c * (1 - normalized_model_size) + (1 - self.alpha_s - self.alpha_c) * normalized_recency
         selected_modalities = np.argsort(priority)[-top_k:]
         return selected_modalities
 
@@ -73,10 +76,9 @@ class Communication:
         # 更新指定模态的上次上传轮次
         self.last_upload_rounds[modality_index] = current_round
 
-# Example usage:
-# communication = Communication(num_modalities=3)
+# 示例用法:
+# communication = Communication(num_modalities=3, alpha_s=0.5, alpha_c=0.3)
 # shapley_values = communication.compute_shapley_values(predictions, true_labels)
-# recency = communication.compute_recency(current_round=10, modality_index=0)
-# communication.update_last_upload_round(modality_index=0, current_round=10)
+# model_size = [100, 200, 150]  # 示例模型大小
+# recency = [communication.compute_recency(current_round=10, modality_index=i) for i in range(3)]
 # selected_modalities = communication.select_modalities(shapley_values, model_size, recency, top_k=2)
-# selected_clients = communication.select_clients(local_losses, top_delta=5)
