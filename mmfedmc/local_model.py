@@ -1,6 +1,7 @@
 # local_model.py
 import numpy as np
 from sklearn.linear_model import SGDClassifier
+from mmfedmc.fusion import DecisionFusion
 
 class LocalEnsembleModel:
     def __init__(self, num_modalities):
@@ -21,7 +22,12 @@ class LocalEnsembleModel:
         # 使用SGD优化器更新集成模型
         for epoch in range(epochs):
             self.ensemble_model.partial_fit(predictions, labels, classes=np.unique(labels))
-
+    
+    def update_ensemble_model_stage_1(self, predictions, shapley_values):
+        # 第一阶段更新，仅用于计算Shapley值
+        fused_predictions = self.decision_fusion.stage_1_update(predictions, shapley_values)
+        self.update_ensemble_model(fused_predictions, shapley_values)
+    
     def update_ensemble_model_stage_2(self, global_models, local_data, local_labels):
         # 使用全局模态模型和本地数据更新个性化集成模型
         predictions = [global_models[m].predict(local_data) for m in range(self.num_modalities)]

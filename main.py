@@ -60,12 +60,12 @@ for t in range(T):
     # 本地部署
     global_models = global_model.get_global_models()
     for client_index, local_model in enumerate(local_models):
-        for modality_index in range(num_modalities):
-            local_model.update_ensemble_model(global_models, labels[client_index])
-
+        # 调用第二阶段更新
+        local_model.update_ensemble_model_stage_2(global_models, data[client_index], labels[client_index])
     for client_index, local_model in enumerate(local_models):
         model_sizes = local_model.get_model_sizes()
     print(f"Client {client_index} model sizes: {model_sizes}")
+    
     
     # Example usage in main.py
     for t in range(T):
