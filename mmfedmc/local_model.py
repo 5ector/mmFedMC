@@ -45,6 +45,12 @@ class LocalEnsembleModel:
         holo_confidence = [loss / sum(losses) for loss in losses]
         return holo_confidence
 
+    def calculate_co_belief(self, data, true_labels):
+        mono_confidences = [self.calculate_mono_confidence(data, m, true_labels) for m in range(self.num_modalities)]
+        holo_confidences = self.calculate_holo_confidence(data, true_labels)
+        co_belief = [mono_conf + holo_conf for mono_conf, holo_conf in zip(mono_confidences, holo_confidences)]
+        return co_belief
+    
     def save_model(self):
         pass
 

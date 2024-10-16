@@ -1,4 +1,5 @@
 # aggregation.py
+import numpy as np
 def aggregate_models(global_model, local_models, selected_clients, data, num_modalities):
     global_weights = np.random.rand(num_modalities)
 
