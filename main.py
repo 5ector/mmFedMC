@@ -40,6 +40,11 @@ for t in range(T):
         model_sizes = local_model.get_model_sizes()
     print(f"Client {client_index} model sizes: {model_sizes}")
 
+    # Calculate Calibrated Co-Belief (CCB)
+    for client_index, local_model in enumerate(local_models):
+        calibrated_co_beliefs = local_model.calculate_calibrated_co_belief(data[client_index], labels[client_index])
+        print(f"Client {client_index} Calibrated Co-Beliefs: {calibrated_co_beliefs}")
+
 # Example GE and GEB calculations
 example_f = lambda x: np.dot(x, np.random.rand(x.shape[1]))  # a dummy model function
 example_D = list(zip(data[0], labels[0]))  # a dummy dataset

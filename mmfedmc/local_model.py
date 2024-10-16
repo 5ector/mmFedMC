@@ -51,6 +51,25 @@ class LocalEnsembleModel:
         co_belief = [mono_conf + holo_conf for mono_conf, holo_conf in zip(mono_confidences, holo_confidences)]
         return co_belief
     
+    def calculate_distribution_uniformity(self, data, modality_index):
+        probabilities = self.models[modality_index].predict_proba(data)
+        C = probabilities.shape[1]
+        mu = 1 / C
+        du = np.mean(np.abs(probabilities - mu), axis=1)
+        return np.mean(du)
+
+    def calculate_relative_calibration(self, data):
+        DUs = [self.calculate_distribution_uniformity(data, m) for m in range(self.num_modalities)]
+        RCs = [DU / sum(DUs) for DU in DUs]
+        return RCs
+
+    def calculate_calibrated_co_belief(self, data, true_labels):
+        DUs = [self.calculate_distribution_uniformity(data, m) for m in range(self.num_modalities)]
+        co_beliefs = self.calculate_co_belief(data, true_labels)
+        RCs = self.calculate_relative_calibration(data)
+        calibrated_co_beliefs = [co_belief * (rc if du < max(DUs) else 1) for co_belief, rc, du in zip(co_beliefs, RCs, DUs)]
+        return calibrated_co_beliefs
+        
     def save_model(self):
         pass
 
