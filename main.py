@@ -9,6 +9,7 @@ from data_generation import generate_data
 from training import train_local_models
 from selection import select_modalities_and_clients
 from aggregation import aggregate_models
+from generalization_error import calculate_ge, calculate_geb, logistic_loss
 
 # Generate data
 data, labels, local_losses = generate_data(num_clients)
@@ -38,6 +39,16 @@ for t in range(T):
     for client_index, local_model in enumerate(local_models):
         model_sizes = local_model.get_model_sizes()
     print(f"Client {client_index} model sizes: {model_sizes}")
+
+# Example GE and GEB calculations
+example_f = lambda x: np.dot(x, np.random.rand(x.shape[1]))  # a dummy model function
+example_D = list(zip(data[0], labels[0]))  # a dummy dataset
+empirical_errors = [calculate_ge(example_f, example_D, logistic_loss) for _ in range(num_modalities)]
+fusion_weights = np.random.rand(num_modalities, num_modalities)
+losses = np.random.rand(num_modalities, num_modalities)
+
+geb = calculate_geb(range(num_modalities), 0.1, delta, len(data[0]), empirical_errors, fusion_weights, losses)
+print(f"Generalization Error Bound: {geb}")
 
 # Update and save final models
 final_global_models = global_model.get_global_models()
