@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 from sklearn.linear_model import SGDClassifier
 from mmfedmc.fusion import DecisionFusion
 
@@ -11,14 +11,14 @@ class LocalEnsembleModel:
 
     def train(self, data, labels, modality_index, epochs=1, learning_rate=0.01):
         for epoch in range(epochs):
-            self.models[modality_index].partial_fit(data, labels, classes=np.unique(labels))
+            self.models[modality_index].partial_fit(data, labels, classes=torch.unique(labels).numpy())
 
     def predict(self, data, modality_index):
         return self.models[modality_index].predict(data)
 
     def update_ensemble_model(self, predictions, labels, epochs=1, learning_rate=0.01):
         for epoch in range(epochs):
-            self.ensemble_model.partial_fit(predictions, labels, classes=np.unique(labels))
+            self.ensemble_model.partial_fit(predictions, labels, classes=torch.unique(labels).numpy())
 
     def update_ensemble_model_stage_1(self, predictions, shapley_values):
         fused_predictions = self.decision_fusion.stage_1_update(predictions, shapley_values)
@@ -30,18 +30,18 @@ class LocalEnsembleModel:
         self.update_ensemble_model(ensemble_predictions, local_labels)
 
     def fuse_predictions(self, predictions):
-        fused_predictions = np.mean(predictions, axis=0)  # Placeholder
+        fused_predictions = torch.mean(torch.stack(predictions), axis=0)
         return fused_predictions
 
     def calculate_mono_confidence(self, data, modality_index, true_labels):
         probabilities = self.models[modality_index].predict_proba(data)
-        true_class_probabilities = probabilities[np.arange(len(data)), true_labels]
-        mono_confidence = np.mean(true_class_probabilities)
+        true_class_probabilities = probabilities[torch.arange(len(data)), true_labels]
+        mono_confidence = torch.mean(true_class_probabilities)
         return mono_confidence
 
     def calculate_holo_confidence(self, data, true_labels):
-        probabilities = [model.predict_proba(data) for model in self.models]
-        losses = [1 - np.mean(prob[np.arange(len(data)), true_labels]) for prob in probabilities]
+        probabilities = [self.models[m].predict_proba(data) for m in range(self.num_modalities)]
+        losses = [1 - torch.mean(prob[torch.arange(len(data)), true_labels]) for prob in probabilities]
         holo_confidence = [loss / sum(losses) for loss in losses]
         return holo_confidence
 
@@ -55,8 +55,8 @@ class LocalEnsembleModel:
         probabilities = self.models[modality_index].predict_proba(data)
         C = probabilities.shape[1]
         mu = 1 / C
-        du = np.mean(np.abs(probabilities - mu), axis=1)
-        return np.mean(du)
+        du = torch.mean(torch.abs(probabilities - mu), axis=1)
+        return torch.mean(du)
 
     def calculate_relative_calibration(self, data):
         DUs = [self.calculate_distribution_uniformity(data, m) for m in range(self.num_modalities)]
@@ -77,7 +77,7 @@ class LocalEnsembleModel:
         model_sizes = [self.models[m].coef_.size for m in range(self.num_modalities)]
         return model_sizes
 
-# Example usage:
+# 示例用法:
 # local_model = LocalEnsembleModel(num_modalities=3)
 # local_model.train(data_modality_1, labels_modality_1, modality_index=0, epochs=5)
 # local_model.train(data_modality_2, labels_modality_2, modality_index=1, epochs=5)

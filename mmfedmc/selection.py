@@ -1,8 +1,7 @@
-# selection.py
-import numpy as np
+import torch
+
 class ModalitySelection:
     def __init__(self):
-        # 初始化模态选择模块
         pass
 
     def select_modalities(self, priorities, gamma):
@@ -12,13 +11,12 @@ class ModalitySelection:
         :param gamma: 要选择的模态数量
         :return: 选定的模态索引
         """
-        # 获取优先级最高的 gamma 个模态的索引
-        top_gamma_indices = np.argsort(priorities)[-gamma:]
-        return top_gamma_indices
+        priorities_tensor = torch.tensor(priorities)
+        top_gamma_indices = torch.topk(priorities_tensor, gamma).indices
+        return top_gamma_indices.tolist()
 
 class ClientSelection:
     def __init__(self):
-        # 初始化客户端选择模块
         pass
 
     def select_clients(self, local_losses, delta, K):
@@ -29,17 +27,21 @@ class ClientSelection:
         :param K: 客户端总数
         :return: 选定的客户端索引
         """
-        selected_clients = []
         num_clients = len(local_losses)
-
-        for m in range(len(local_losses[0])):  # assuming local_losses is a list of lists with shape (num_clients, num_modalities)
-            # 获取模态 m 的损失值
-            modality_losses = [loss[m] for loss in local_losses]
-            # 计算要选择的客户端数量
-            threshold = int(np.ceil(delta * num_clients))
-            # 获取损失值最高的客户端索引
-            top_losses_indices = np.argsort(modality_losses)[-threshold:]
-            selected_clients.extend(top_losses_indices)
+        local_losses_tensor = torch.tensor(local_losses)
         
-        # 去重并返回
-        return list(set(selected_clients))
+        selected_clients = set()
+        
+        for m in range(local_losses_tensor.size(1)):  # assuming local_losses is a 2D list with shape (num_clients, num_modalities)
+            modality_losses = local_losses_tensor[:, m]
+            threshold = int(torch.ceil(torch.tensor(delta * num_clients)))
+            top_losses_indices = torch.topk(modality_losses, threshold).indices
+            selected_clients.update(top_losses_indices.tolist())
+        
+        return list(selected_clients)
+
+def select_modalities_and_clients(communication, local_model, data, labels, gamma, local_losses, delta, num_modalities, num_clients):
+    shapley_values = [communication.compute_shapley_values([local_model.predict(data[client_index], i) for i in range(num_modalities)], labels[client_index]) for client_index in range(num_clients)]
+    selected_modalities = [communication.select_modalities(shapley_values[client_index], torch.rand(num_modalities), torch.rand(num_modalities), gamma) for client_index in range(num_clients)]
+    selected_clients = communication.select_clients(local_losses, delta)
+    return selected_modalities, selected_clients
